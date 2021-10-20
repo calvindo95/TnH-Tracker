@@ -6,7 +6,7 @@ import config
 
 DHT_SENSOR = Adafruit_DHT.DHT11
 DHT_PIN = 4
-DeviceID=1
+DeviceID = config.deviceID
 
 def connect_to_db():
     # Connect to MariaDB Platform
