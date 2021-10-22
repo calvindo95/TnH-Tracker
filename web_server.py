@@ -21,26 +21,55 @@ def connect_to_db():
         print(f"Error connecting to MariaDB Platform: {e}")
         time.sleep(5)
         connect_to_db()
-
-def get_data(local_cur,deviceID):
-    try:
-        query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity FROM Device 
-                LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
-                LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
-                LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
-                WHERE Device.DeviceID=%s
-                ORDER BY Data_History.CurrentDateTime DESC LIMIT 1'''
-        data = (deviceID,)
-        local_cur.execute(query, data)
-        for device_name, current_date_time, temperature, humidity in local_cur:
-            return device_name, current_date_time, temperature, humidity
-
-    except Exception as e:
-        print(f"Error querying data from MariaDB: {e}")
-
+    
 # convert dt_object to 12hr time
 def convert_dt(dt_obj):
     return dt_obj.strftime("%I:%M:%S %p")
+
+class DeviceData():
+    def __init__(self, local_cur, deviceID):
+        self.local_cur = local_cur
+        self.deviceID = deviceID
+        self.data = self.get_data(self.deviceID)
+
+    # returns list containing [device_name, current_date_time, temperature, humidity]
+    def get_data(self, deviceID):
+        try:
+            query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity FROM Device 
+                    LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
+                    LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
+                    LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
+                    WHERE Device.DeviceID=%s
+                    ORDER BY Data_History.CurrentDateTime DESC LIMIT 1'''
+            data = (deviceID,)
+            self.local_cur.execute(query, data)
+
+            return self.local_cur.fetchone()
+        
+        except Exception as e:
+            print(f"Error querying data from MariaDB: {e}")
+
+    def get_num_of_devices(self):
+        try:
+            query = '''SELECT DeviceID FROM Device'''
+            self.local_cur.execute(query)
+            num_of_devices = len(self.local_cur.fetchall())
+            return num_of_devices
+
+        except Exception as e:
+            print(f"Error querying data from MariaDB: {e}")
+
+    def get_devname(self):
+        return self.data[0]
+
+    def get_time(self):
+        return convert_dt(self.data[1])
+
+    def get_temperature(self):
+        return self.data[2]
+
+    def get_humidity(self):
+        return self.data[3]
 
 app = Flask(__name__)
 
@@ -53,21 +82,21 @@ def serve_data(name=None):
     conn = connect_to_db()
     cur = conn.cursor()
 
-    device_name1, last_date_time1, local_temperature1, local_humidity1 = get_data(cur, 1)
-    device_name2, last_date_time2, local_temperature2, local_humidity2 = get_data(cur, 2)
-    
+    dev1 = DeviceData(cur, 1)
+    dev2 = DeviceData(cur, 2)
+
     conn.close()
 
     return render_template('index.html',
                             name=name,
-                            dev_name1=device_name1,
-                            current_date_time1=convert_dt(last_date_time1),
-                            temperature1=local_temperature1, 
-                            humidity1=local_humidity1,
-                            dev_name2=device_name2,
-                            current_date_time2=convert_dt(last_date_time2),
-                            temperature2=local_temperature2, 
-                            humidity2=local_humidity2)
+                            dev_name1=dev1.get_devname(),
+                            current_date_time1=dev1.get_time(),
+                            temperature1=dev1.get_temperature(), 
+                            humidity1=dev1.get_humidity(),
+                            dev_name2=dev2.get_devname(),
+                            current_date_time2=dev2.get_time(),
+                            temperature2=dev2.get_temperature(), 
+                            humidity2=dev2.get_humidity(),)
 
 if __name__ == '__main__':
     app.run(debug=True)
