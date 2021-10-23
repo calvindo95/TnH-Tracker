@@ -3,6 +3,7 @@ import mariadb
 import config
 import time
 from datetime import datetime
+from device import *
 
 def connect_to_db():
     # Connect to MariaDB Platform
@@ -21,55 +22,6 @@ def connect_to_db():
         print(f"Error connecting to MariaDB Platform: {e}")
         time.sleep(5)
         connect_to_db()
-    
-# convert dt_object to 12hr time
-def convert_dt(dt_obj):
-    return dt_obj.strftime("%I:%M:%S %p")
-
-class DeviceData():
-    def __init__(self, local_cur, deviceID):
-        self.local_cur = local_cur
-        self.deviceID = deviceID
-        self.data = self.get_data(self.deviceID)
-
-    # returns list containing [device_name, current_date_time, temperature, humidity]
-    def get_data(self, deviceID):
-        try:
-            query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity FROM Device 
-                    LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
-                    LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
-                    LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
-                    WHERE Device.DeviceID=%s
-                    ORDER BY Data_History.CurrentDateTime DESC LIMIT 1'''
-            data = (deviceID,)
-            self.local_cur.execute(query, data)
-
-            return self.local_cur.fetchone()
-        
-        except Exception as e:
-            print(f"Error querying data from MariaDB: {e}")
-
-    def get_num_of_devices(self):
-        try:
-            query = '''SELECT DeviceID FROM Device'''
-            self.local_cur.execute(query)
-            num_of_devices = len(self.local_cur.fetchall())
-            return num_of_devices
-
-        except Exception as e:
-            print(f"Error querying data from MariaDB: {e}")
-
-    def get_devname(self):
-        return self.data[0]
-
-    def get_time(self):
-        return convert_dt(self.data[1])
-
-    def get_temperature(self):
-        return self.data[2]
-
-    def get_humidity(self):
-        return self.data[3]
 
 app = Flask(__name__)
 
@@ -82,8 +34,13 @@ def serve_data(name=None):
     conn = connect_to_db()
     cur = conn.cursor()
 
-    dev1 = DeviceData(cur, 1)
-    dev2 = DeviceData(cur, 2)
+    dev1 = LastRecord(cur, 1)
+    dev2 = LastRecord(cur, 2)
+
+    g1 = LastHour(cur, 1)
+    g1.make_graph()
+    g2 = LastHour(cur, 2)
+    g2.make_graph()
 
     conn.close()
 
