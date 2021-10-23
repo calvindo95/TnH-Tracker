@@ -65,10 +65,11 @@ class LastRecord(Device):
     def get_humidity(self):
         return self.data[0][3]
 
-class LastHour(Device):
-    def __init__(self, local_cur, deviceID):
+class GraphData(Device):
+    def __init__(self, local_cur, deviceID, minutes):
         super().__init__(local_cur, deviceID)
-        self.data = self.get_records(self.deviceID, 60)
+        self.data = self.get_records(self.deviceID, minutes)
+        self.minutes = minutes
 
     def formatdata(self, value):
         xticks = []
@@ -80,6 +81,18 @@ class LastHour(Device):
         ydata.reverse()
         return xticks, ydata
 
+    def calc_ticks(self):
+        denominator = self.minutes/12
+        ticks = []
+        for i in range(0, 13):
+            if i < 1:
+                ticks.append(int(i*denominator))
+            else:
+                ticks.append(int(i*denominator)-1)
+
+        print(ticks)
+        return ticks
+
     def make_graph(self):
         type_dict = {'humidity':3, 'temperature':2}
         for key in type_dict:
@@ -88,12 +101,16 @@ class LastHour(Device):
 
     def plot_graph(self, x, y, type=''):
         string = type.capitalize()
+        ticks = self.calc_ticks()
+        hour = int(self.minutes/60)
+
         fig = plt.figure()
         plt.plot(x, y)
-        plt.xticks(rotation=45, ha='right', ticks=[0, 5, 11, 17, 23, 29, 35, 41, 47, 53, 59])
+        plt.xticks(rotation=45, ha='right', ticks=ticks)
+        plt.grid()
         plt.subplots_adjust(bottom=0.30)
-        plt.title(f'{string} Graph for Last Hour')
+        plt.title(f'{string} Graph for Last {hour} Hour(s)')
         plt.ylabel(f'{string} (%)')
-        plt.xlabel('Time (last hour)')
-        plt.savefig(f'static/{type}_{self.deviceID}_graph.png')
+        plt.xlabel('Time (last {hour} hour(s))')
+        plt.savefig(f'static/{self.minutes}min_{type}_{self.deviceID}_graph.png')
         plt.close(fig)

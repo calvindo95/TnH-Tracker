@@ -37,10 +37,15 @@ def serve_data(name=None):
     dev1 = LastRecord(cur, 1)
     dev2 = LastRecord(cur, 2)
 
-    g1 = LastHour(cur, 1)
+    g1 = GraphData(cur, 1, 60)
     g1.make_graph()
-    g2 = LastHour(cur, 2)
+    g2 = GraphData(cur, 2, 60)
     g2.make_graph()
+
+    g3 = GraphData(cur, 1, 1440)
+    g3.make_graph()
+    g4 = GraphData(cur, 2, 1440)
+    g4.make_graph()
 
     conn.close()
 
