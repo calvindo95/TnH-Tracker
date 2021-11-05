@@ -33,3 +33,15 @@ LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID
 LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID
 LEFT JOIN History ON History.HistoryID=Data_History.HistoryID
 WHERE Device.DeviceID=1
+
+SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity FROM Device 
+LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
+LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
+LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
+ORDER BY CurrentDateTime ASC
+
+SELECT DevName.DevName, MAX(Data_History.CurrentDateTime), History.Temperature, History.Humidity FROM Device 
+LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
+LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
+LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
+WHERE Device.DeviceID=1

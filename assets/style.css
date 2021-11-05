@@ -1,0 +1,77 @@
+body {
+    background-color: #521CB1;
+}
+
+.custom_tabs{
+    border-top-left-radius: 3px;
+    border-radius: 6px;
+}
+
+.tab_style{
+    background-color:rgb(50, 50, 50) !important;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-top: 3px solid transparent !important;
+    border-left: 0px !important;
+    border-right: 0px !important;
+    border-bottom: 0px !important;
+    padding: 12px !important;
+    font-family: "system-ui";
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    color: #a5a5a5;
+    border-radius: 6px
+}
+
+.tab_selected{
+    box-shadow: 1px 1px 0px white;
+    border-left: 1px solid lightgrey !important;
+    border-right: 1px solid lightgrey !important;
+    border-top: 3px solid #e36209 !important;
+    color: white !important;
+}
+
+.box {
+    background: rgb(50, 50, 50);
+    width: auto;
+    margin: 40px auto;
+    margin-top: 1px;
+    padding: 20px;
+    border-radius: 6px;
+}
+
+.title {
+    margin: 0;
+    padding: 4px 0;
+    color: white;
+}
+
+.datetime {
+    font-size: 100%;
+    color: white;
+    margin-left: 2%;
+}
+
+.information .header {
+    display: inline-block;
+    font-weight: bold;
+    color: #a5a5a5;
+    width: 30%;
+    margin-bottom: 10px;
+}
+
+.information .data {
+    color: #a5a5a5;
+    float: right;
+    width: 40%;
+    margin-right: 40px;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+    height: auto;
+    margin-top: 40px;
+    margin-top: 30px;
+}

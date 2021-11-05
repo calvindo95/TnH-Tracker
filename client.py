@@ -1,11 +1,13 @@
-import Adafruit_DHT
+import board
+import busio
+import adafruit_sht31d
 import time
 import mariadb
 from datetime import datetime
 import config
 
-DHT_SENSOR = Adafruit_DHT.DHT11
-DHT_PIN = 4
+i2c = busio.I2C(board.SCL, board.SDA)
+sensor = adafruit_sht31d.SHT31D(i2c)
 DeviceID = config.deviceID
 
 def connect_to_db():
@@ -28,7 +30,7 @@ def connect_to_db():
 
 def get_sensor_data():
     try:
-        humidity, temperature = Adafruit_DHT.read(DHT_SENSOR, DHT_PIN)
+        humidity, temperature = sensor.relative_humidity, sensor.temperature
         tempF = round(temperature*(9/5)+32, 2)
 
         return humidity, tempF
