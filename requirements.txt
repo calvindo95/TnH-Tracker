@@ -1,4 +1,4 @@
 mariadb
 dash
-adafruit_sht31d
+adafruit-circuitpython-sht31d
 plotly
