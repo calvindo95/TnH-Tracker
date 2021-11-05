@@ -33,7 +33,7 @@ class Device():
             print(f'{dt_string}: Successful query of {self.deviceID} records')
 
             return self.local_cur.fetchall()
-            
+
         except Exception as e:
             print(f"Error querying records from MariaDB: {e}")
 
@@ -57,7 +57,7 @@ class Device():
 
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of {self.deviceID} temperature')
+            print(f'{dt_string}: Successful query of {self.deviceID} temperature and humidity data')
             
             return x_time, y_temp, y_humidity
 
