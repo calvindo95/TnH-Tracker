@@ -1,0 +1,4 @@
+mariadb
+dash
+adafruit_sht31d
+plotly
