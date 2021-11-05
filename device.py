@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 
 # convert dt_object to 12hr time
 def convert_dt(dt_obj):
-    return dt_obj.strftime("%I:%M:%S %p")
+    return dt_obj.strftime("%m/%d %I:%M:%S %p")
 
 class Device():
     def __init__(self, local_cur, deviceID):
@@ -18,7 +18,8 @@ class Device():
     # returns list containing [device_name, current_date_time, temperature, humidity]
     def get_records(self, quantity):
         try:
-            query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity FROM Device 
+            query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity 
+                    FROM Device 
                     LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
                     LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
                     LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
@@ -33,60 +34,46 @@ class Device():
         except Exception as e:
             print(f"Error querying records from MariaDB: {e}")
 
-    def query_temp(self, quantity):
+    def query_data(self, quantity):
         try:
-            query = '''SELECT Data_History.CurrentDateTime, History.Temperature FROM Device  
+            query = '''SELECT Data_History.CurrentDateTime, History.Temperature, History.Humidity
+                    FROM Device  
                     LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
                     LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
                     WHERE Device.DeviceID=%s
                     ORDER BY Data_History.CurrentDateTime DESC LIMIT %s'''
             data = (self.deviceID, quantity,)
             self.local_cur.execute(query, data)
-            x_time, y_temp = [], []
+            x_time, y_temp, y_humidity = [], [], []
             for row in self.local_cur.fetchall():
-                x_time.append(convert_dt(row[0]))
+                x_time.append(row[0])
                 y_temp.append(row[1])
+                y_humidity.append(row[2])
             x_time.reverse()
             y_temp.reverse()
+            y_humidity.reverse()
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
             print(f'{dt_string}: Successful query of {self.deviceID} temperature')
-            return x_time, y_temp
+            return x_time, y_temp, y_humidity
 
         except Exception as e:
             print(f"Error querying temp from MariaDB: {e}")
 
-    def query_humidity(self, quantity=1):
-        try:
-            query = '''SELECT Data_History.CurrentDateTime, History.Humidity FROM Device  
-                    LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
-                    LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
-                    WHERE Device.DeviceID=%s
-                    ORDER BY Data_History.CurrentDateTime DESC LIMIT %s'''
-            data = (self.deviceID, quantity,)
-            self.local_cur.execute(query, data)
+    def get_graphs(self, quantity):
+        x_time, y_temp, y_humidity = self.query_data(quantity)
 
-            x_time, y_humidity = [], []
-            for row in self.local_cur.fetchall():
-                x_time.append(convert_dt(row[0]))
-                y_humidity.append(row[1])
-            x_time.reverse()
-            y_humidity.reverse()
-            now = datetime.now()
-            dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of {self.deviceID} humidity')
-            return x_time, y_humidity
+        temp_graph = self.get_temp_graph(quantity, x_time, y_temp)
+        humidity_graph = self.get_humidity_graph(quantity, x_time, y_humidity)
+        
+        return humidity_graph, temp_graph
 
-        except Exception as e:
-            print(f"Error querying humidity from MariaDB: {e}")
-
-    def get_temp_graph(self, quantity=1):
-        x_time, y_temp = self.query_temp(quantity)
+    def get_temp_graph(self, quantity, local_time, local_temp):
         hours = quantity/60
 
         df = pd.DataFrame({
-            "Time": x_time,
-            "Temperature (F)": y_temp
+            "Time": local_time,
+            "Temperature (F)": local_temp,
             })
         fig = px.line(
             df, x="Time", 
@@ -101,13 +88,12 @@ class Device():
         #fig.data[0].line.color = 'blue'
         return fig
 
-    def get_humidity_graph(self, quantity=1):
-        x_time, y_humidity = self.query_humidity(quantity)
+    def get_humidity_graph(self, quantity, local_time, local_temp):
         hours = quantity/60
 
         df = pd.DataFrame({
-            "Time": x_time,
-            "Humidity (%)": y_humidity
+            "Time": local_time,
+            "Humidity (%)": local_temp
             })
         fig = px.line(
             df, x="Time", 

@@ -66,8 +66,8 @@ def render_content(tab):
 
         dev2 = Device(cur, 2)   
         last_record2 = LastRecord(cur,2)
-        fig2_humidity1hr, fig2_temp1hr = dev2.get_humidity_graph(60), dev2.get_temp_graph(60)
-        fig2_humidity24hr, fig2_temp24hr = dev2.get_humidity_graph(1440), dev2.get_temp_graph(1440)
+        fig2_humidity1hr, fig2_temp1hr = dev2.get_graphs(60)
+        fig2_humidity24hr, fig2_temp24hr = dev2.get_graphs(1440)
 
         return html.Div([
             html.H1(
@@ -109,8 +109,8 @@ def render_content(tab):
 
         dev1 = Device(cur, 1)
         last_record1 = LastRecord(cur,1)
-        fig1_humidity1hr, fig1_temp1hr = dev1.get_humidity_graph(60), dev1.get_temp_graph(60)
-        fig1_humidity24hr, fig1_temp24hr = dev1.get_humidity_graph(1440), dev1.get_temp_graph(1440)
+        fig1_humidity1hr, fig1_temp1hr = dev1.get_graphs(60)
+        fig1_humidity24hr, fig1_temp24hr = dev1.get_graphs(1440)
 
         return html.Div([
             html.H1(
