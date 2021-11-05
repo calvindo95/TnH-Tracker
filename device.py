@@ -27,10 +27,13 @@ class Device():
                     ORDER BY Data_History.CurrentDateTime DESC LIMIT %s'''
             data = (self.deviceID, quantity,)
             self.local_cur.execute(query, data)
+
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
             print(f'{dt_string}: Successful query of {self.deviceID} records')
+
             return self.local_cur.fetchall()
+            
         except Exception as e:
             print(f"Error querying records from MariaDB: {e}")
 
@@ -41,20 +44,21 @@ class Device():
                     LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
                     LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
                     WHERE Device.DeviceID=%s
-                    ORDER BY Data_History.CurrentDateTime DESC LIMIT %s'''
+                    ORDER BY Data_History.CurrentDateTime DESC 
+                    LIMIT %s'''
             data = (self.deviceID, quantity,)
             self.local_cur.execute(query, data)
+
             x_time, y_temp, y_humidity = [], [], []
             for row in self.local_cur.fetchall():
                 x_time.append(row[0])
                 y_temp.append(row[1])
                 y_humidity.append(row[2])
-            x_time.reverse()
-            y_temp.reverse()
-            y_humidity.reverse()
+
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
             print(f'{dt_string}: Successful query of {self.deviceID} temperature')
+            
             return x_time, y_temp, y_humidity
 
         except Exception as e:
@@ -68,12 +72,12 @@ class Device():
         
         return humidity_graph, temp_graph
 
-    def get_temp_graph(self, quantity, local_time, local_temp):
+    def get_temp_graph(self, quantity, x_axis, y_axis):
         hours = quantity/60
 
         df = pd.DataFrame({
-            "Time": local_time,
-            "Temperature (F)": local_temp,
+            "Time": x_axis,
+            "Temperature (F)": y_axis,
             })
         fig = px.line(
             df, x="Time", 
@@ -88,12 +92,12 @@ class Device():
         #fig.data[0].line.color = 'blue'
         return fig
 
-    def get_humidity_graph(self, quantity, local_time, local_temp):
+    def get_humidity_graph(self, quantity, x_axis, y_axis):
         hours = quantity/60
 
         df = pd.DataFrame({
-            "Time": local_time,
-            "Humidity (%)": local_temp
+            "Time": x_axis,
+            "Humidity (%)": y_axis
             })
         fig = px.line(
             df, x="Time", 
@@ -137,54 +141,3 @@ class LastRecord(Device):
 
     def get_humidity(self):
         return self.data[0][3]
-
-# This method is deprecated
-class GraphData(Device):
-    def __init__(self, local_cur, deviceID, minutes):
-        super().__init__(local_cur, deviceID)
-        self.data = self.get_records(self.deviceID, minutes)
-        self.minutes = minutes
-
-    def formatdata(self, value):
-        xticks = []
-        ydata = []
-        for row in self.data:
-            ydata.append(row[value])
-            xticks.append(convert_dt(row[1]))
-        xticks.reverse()
-        ydata.reverse()
-        return xticks, ydata
-
-    def calc_ticks(self):
-        denominator = self.minutes/12
-        ticks = []
-        for i in range(0, 13):
-            if i < 1:
-                ticks.append(int(i*denominator))
-            else:
-                ticks.append(int(i*denominator)-1)
-
-        print(ticks)
-        return ticks
-
-    def make_graph(self):
-        type_dict = {'humidity':3, 'temperature':2}
-        for key in type_dict:
-            x, y, = self.formatdata(type_dict[key])
-            self.plot_graph(x, y, key)
-
-    def plot_graph(self, x, y, type=''):
-        string = type.capitalize()
-        ticks = self.calc_ticks()
-        hour = int(self.minutes/60)
-
-        fig = plt.figure()
-        plt.plot(x, y)
-        plt.xticks(rotation=45, ha='right', ticks=ticks)
-        plt.grid()
-        plt.subplots_adjust(bottom=0.30)
-        plt.title(f'{string} Graph for Last {hour} Hour(s)')
-        plt.ylabel(f'{string} (%)')
-        plt.xlabel('Time (last {hour} hour(s))')
-        plt.savefig(f'static/{self.minutes}min_{type}_{self.deviceID}_graph.png')
-        plt.close(fig)
