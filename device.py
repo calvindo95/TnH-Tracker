@@ -57,7 +57,7 @@ class Device():
 
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of {self.deviceID} temperature and humidity data')
+            print(f'{dt_string}: Successful query of {self.deviceID}: {quantity} temperature and humidity datapoints pulled')
             
             return x_time, y_temp, y_humidity
 
@@ -72,7 +72,7 @@ class Device():
         
         return humidity_graph, temp_graph
 
-    def get_temp_graph(self, quantity, x_axis, y_axis):
+    def get_temp_graph(self, quantity, x_axis: list, y_axis: list):
         hours = quantity/60
 
         df = pd.DataFrame({
@@ -92,7 +92,7 @@ class Device():
         #fig.data[0].line.color = 'blue'
         return fig
 
-    def get_humidity_graph(self, quantity, x_axis, y_axis):
+    def get_humidity_graph(self, quantity, x_axis: list, y_axis: list):
         hours = quantity/60
 
         df = pd.DataFrame({
