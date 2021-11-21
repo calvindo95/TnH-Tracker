@@ -24,7 +24,7 @@ def connect_to_db():
         time.sleep(5)
         connect_to_db()
 
-def show_tab(device_obj: Device, last_record_obj: LastRecord, fig1, fig2):
+def show_tab(device_obj: Device, last_record_obj: LastRecord, fig_humidity, fig_temp, fig_combined):
     return html.Div([
         html.H1(
             f'{device_obj.get_devname()}', className='title'
@@ -43,10 +43,13 @@ def show_tab(device_obj: Device, last_record_obj: LastRecord, fig1, fig2):
             className='information'
         ),
         dcc.Graph(
-            figure = fig1
+            figure = fig_humidity
         ),
         dcc.Graph(
-            figure = fig2
+            figure = fig_temp
+        ),
+        dcc.Graph(
+            figure = fig_combined
         )
     ], 
             className='box'
@@ -66,7 +69,6 @@ app.layout = html.Div([
         children=[
             dcc.Tab(
                 label=f'{device1.get_devname()}',
-                #value='tab1', 
                 className='tab_style',
                 selected_className='tab_selected',
                 children=[
@@ -75,14 +77,18 @@ app.layout = html.Div([
                         children = [
                             dcc.Tab(
                                 label='1 Hour Data', 
-                                #value="subtab1.1", 
                                 className='tab_style',
                                 selected_className='tab_selected',
                                 children=[]
                             ), 
                             dcc.Tab(
                                 label='24 Hour Data', 
-                                #value="subtab1.2", 
+                                className='tab_style',
+                                selected_className='tab_selected',
+                                children=[]
+                            ),
+                            dcc.Tab(
+                                label='7 Day Data', 
                                 className='tab_style',
                                 selected_className='tab_selected',
                                 children=[]
@@ -93,7 +99,6 @@ app.layout = html.Div([
             ),
             dcc.Tab(
                 label=f'{device2.get_devname()}', 
-                #value='tab2',
                 className='tab_style',
                 selected_className='tab_selected',
                 children=[
@@ -102,14 +107,18 @@ app.layout = html.Div([
                         children = [
                             dcc.Tab(
                                 label='1 Hour Data', 
-                                #value="subtab2.1", 
                                 className='tab_style',
                                 selected_className='tab_selected',
                                 children=[]
                             ),
                             dcc.Tab(
                                 label='24 Hour Data', 
-                                #value="subtab2.2", 
+                                className='tab_style',
+                                selected_className='tab_selected',
+                                children=[]
+                            ),
+                            dcc.Tab(
+                                label='7 Day Data', 
                                 className='tab_style',
                                 selected_className='tab_selected',
                                 children=[]
@@ -136,33 +145,44 @@ def render_content(tab, subtab1, subtab2):
         conn = connect_to_db()
         cur = conn.cursor()
         dev = Device(cur, 1)
-        last_record1 = LastRecord(cur,1)
+        last_record = LastRecord(cur,1)
 
         if subtab1 == 'tab-1':
-            fig_humidity, fig_temp = dev.get_graphs(60)
-        
-            return show_tab(dev, last_record1, fig_humidity, fig_temp), conn.close()
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(60)  
+
+            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
 
         if subtab1 == 'tab-2':
-            fig_humidity, fig_temp = dev.get_graphs(1440)
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(1440)
                 
-            return show_tab(dev, last_record1, fig_humidity, fig_temp), conn.close()
+            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
+
+        if subtab1 == 'tab-3':
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(10080)
+                
+            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
+
 
     if tab == 'tab-2':
         conn = connect_to_db()
         cur = conn.cursor()
         dev = Device(cur, 2)
-        last_record1 = LastRecord(cur,2)
+        last_record = LastRecord(cur,2)
         
         if subtab2 == 'tab-1':
-            fig_humidity, fig_temp = dev.get_graphs(60)
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(60)
         
-            return show_tab(dev, last_record1, fig_humidity, fig_temp), conn.close()
+            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
 
         if subtab2 == 'tab-2':
-            fig_humidity, fig_temp = dev.get_graphs(1440)
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(1440)
         
-            return show_tab(dev, last_record1, fig_humidity, fig_temp), conn.close()
+            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
+
+        if subtab2 == 'tab-3':
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(10080)
+        
+            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0')

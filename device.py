@@ -69,8 +69,9 @@ class Device():
 
         temp_graph = self.get_temp_graph(quantity, x_time, y_temp)
         humidity_graph = self.get_humidity_graph(quantity, x_time, y_humidity)
+        combined_graph = self.get_combined_graph(quantity, x_time, y_temp, y_humidity)
         
-        return humidity_graph, temp_graph
+        return humidity_graph, temp_graph, combined_graph
 
     def get_temp_graph(self, quantity, x_axis: list, y_axis: list):
         hours = quantity/60
@@ -107,6 +108,28 @@ class Device():
         fig.update_layout(paper_bgcolor='rgb(0, 0, 0, 0)', 
             #plot_bgcolor='#c8c8c8', 
             font_color='white'
+        )       
+        #fig.data[0].line.color = 'blue'
+        return fig
+
+    def get_combined_graph(self, quantity, x_time: list, y_temp: list, y_humidity: list):
+        hours = quantity/60
+
+        df = pd.DataFrame({
+            "Time": x_time,
+            "Humidity (%)": y_humidity,
+            "Temperature (F)": y_temp
+            })
+        fig = px.line(
+            df, x="Time", 
+            y=["Humidity (%)", "Temperature (F)"],
+            title=f'Humidity for the Last {hours} Hour(s)'
+        )
+        fig.update_layout(
+            paper_bgcolor='rgb(0, 0, 0, 0)', 
+            #plot_bgcolor='#c8c8c8', 
+            font_color='white',
+            legend_title=''
         )       
         #fig.data[0].line.color = 'blue'
         return fig
