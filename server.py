@@ -54,8 +54,8 @@ def show_tab(device_obj: Device, last_record_obj: LastRecord, fig_humidity, fig_
     ], 
             className='box'
         )
-
 app = dash.Dash(__name__)
+server = app.server
 conn = connect_to_db()
 cur = conn.cursor()
 
@@ -185,4 +185,6 @@ def render_content(tab, subtab1, subtab2):
             return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(
+        debug=True,
+        host='0.0.0.0')
