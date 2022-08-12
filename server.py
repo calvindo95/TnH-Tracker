@@ -24,21 +24,23 @@ def connect_to_db():
         time.sleep(5)
         connect_to_db()
 
-def show_tab(device_obj: Device, last_record_obj: LastRecord, fig_humidity, fig_temp, fig_combined):
+def show_tab(device_obj: Device, fig_humidity, fig_temp, fig_combined):
+    device_obj.query_last_record()
+
     return html.Div([
         html.H1(
             f'{device_obj.get_devname()}', className='title'
         ),
         html.H2(
-            f'Data as of: {last_record_obj.get_time()}', className='datetime'
+            f'Data as of: {device_obj.get_time()}', className='datetime'
         ),
         html.Div([
-            html.Span(f'{last_record_obj.get_humidity()}', className='data'),
+            html.Span(f'{device_obj.get_humidity()}', className='data'),
             html.Span('Relative Humidity', className='header')],
             className='information'
         ),
         html.Div([
-            html.Span(f'{last_record_obj.get_temperature()}', className='data'),
+            html.Span(f'{device_obj.get_temperature()}', className='data'),
             html.Span('Temperature', className='header')], 
             className='information'
         ),
@@ -131,8 +133,6 @@ app.layout = html.Div([
     ), 
     html.Div(id='content')
 ])
-print('close')
-conn.close()
 
 @app.callback(
     Output('content', 'children'), 
@@ -141,48 +141,39 @@ conn.close()
     Input('subtab2', 'value')])
 
 def render_content(tab, subtab1, subtab2):
+    start = datetime.now()
     if tab == 'tab-1':
-        conn = connect_to_db()
-        cur = conn.cursor()
         dev = Device(cur, 1)
-        last_record = LastRecord(cur,1)
 
         if subtab1 == 'tab-1':
-            fig_humidity, fig_temp, fig_combined = dev.get_graphs(60)  
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(60)
 
-            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
-
-        if subtab1 == 'tab-2':
+        elif subtab1 == 'tab-2':
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(1440)
                 
-            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
-
-        if subtab1 == 'tab-3':
+        elif subtab1 == 'tab-3':
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(10080)
-                
-            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
+        end = datetime.now()
+        dt_string = end.strftime("%Y-%m-%d %H:%M:%S")
+        print(f'{dt_string}: Content rendered in: {end - start}')
+        return show_tab(dev, fig_humidity, fig_temp, fig_combined)
 
-
-    if tab == 'tab-2':
-        conn = connect_to_db()
-        cur = conn.cursor()
+    elif tab == 'tab-2':
         dev = Device(cur, 2)
-        last_record = LastRecord(cur,2)
         
         if subtab2 == 'tab-1':
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(60)
         
-            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
-
-        if subtab2 == 'tab-2':
+        elif subtab2 == 'tab-2':
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(1440)
         
-            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
-
-        if subtab2 == 'tab-3':
+        elif subtab2 == 'tab-3':
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(10080)
-        
-            return show_tab(dev, last_record, fig_humidity, fig_temp, fig_combined), conn.close()
+
+        end = datetime.now()
+        dt_string = end.strftime("%Y-%m-%d %H:%M:%S")
+        print(f'{dt_string}: Content rendered in: {end - start}')
+        return show_tab(dev, fig_humidity, fig_temp, fig_combined)
 
 if __name__ == '__main__':
     app.run_server(

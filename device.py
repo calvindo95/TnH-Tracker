@@ -14,9 +14,9 @@ class Device():
         self.local_cur = local_cur
         self.deviceID = deviceID
         self.dev_name = self.query_devname()
+        self.last_record = []
 
-    # returns list containing [device_name, current_date_time, temperature, humidity]
-    def get_records(self, quantity):
+    def query_last_record(self):
         try:
             query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity 
                     FROM Device 
@@ -24,19 +24,29 @@ class Device():
                     LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
                     LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
                     WHERE Device.DeviceID=%s
-                    ORDER BY Data_History.CurrentDateTime DESC LIMIT %s'''
-            data = (self.deviceID, quantity,)
+                    ORDER BY Data_History.CurrentDateTime DESC LIMIT 1'''
+            data = (self.deviceID,)
             self.local_cur.execute(query, data)
 
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
             print(f'{dt_string}: Successful query of {self.deviceID} records')
 
-            return self.local_cur.fetchall()
+            self.last_record = self.local_cur.fetchall()
 
         except Exception as e:
             print(f"Error querying records from MariaDB: {e}")
+        
+    def get_time(self):
+        return convert_dt(self.last_record[0][1])
 
+    def get_temperature(self):
+        return self.last_record[0][2]
+
+    def get_humidity(self):
+        return self.last_record[0][3]
+
+    # returns list containing [device_name, current_date_time, temperature, humidity]
     def query_data(self, quantity):
         try:
             query = '''SELECT Data_History.CurrentDateTime, History.Temperature, History.Humidity
@@ -57,7 +67,7 @@ class Device():
 
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of {self.deviceID}: {quantity} temperature and humidity datapoints pulled')
+            print(f'{dt_string}: Successful query of device {self.deviceID}: {quantity} temperature and humidity datapoints pulled')
             
             return x_time, y_temp, y_humidity
 
@@ -143,24 +153,10 @@ class Device():
             self.local_cur.execute(query, data)
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of {self.deviceID} device name')
+            print(f'{dt_string}: Successful query of device {self.deviceID}')
             return self.local_cur.fetchone()[0]
         except Exception as e:
             print(f"Error querying devname from MariaDB: {e}")
 
     def get_devname(self):
         return self.dev_name
-
-class LastRecord(Device):
-    def __init__(self, local_cur, deviceID):
-        super().__init__(local_cur, deviceID)
-        self.data = self.get_records(1)
-
-    def get_time(self):
-        return convert_dt(self.data[0][1])
-
-    def get_temperature(self):
-        return self.data[0][2]
-
-    def get_humidity(self):
-        return self.data[0][3]
