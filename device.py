@@ -15,11 +15,6 @@ class Device():
         self.deviceID = deviceID
         self.dev_name = self.query_devname()
         self.last_record = []
-        print(f"Device object: {self.deviceID} created")
-    
-    def __del__(self):
-        print(self.last_record)
-        print(f"Device object: {self.deviceID} destroyed")
 
     def query_last_record(self):
         try:
