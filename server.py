@@ -15,7 +15,8 @@ def connect_to_db():
             password=config.password,
             host=config.host,
             port=config.port,
-            database=config.database
+            database=config.database,
+            autocommit=True
         )
 
         return conn

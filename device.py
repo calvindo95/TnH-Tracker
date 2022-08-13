@@ -15,6 +15,11 @@ class Device():
         self.deviceID = deviceID
         self.dev_name = self.query_devname()
         self.last_record = []
+        print(f"Device object: {self.deviceID} created")
+    
+    def __del__(self):
+        print(self.last_record)
+        print(f"Device object: {self.deviceID} destroyed")
 
     def query_last_record(self):
         try:
@@ -32,19 +37,19 @@ class Device():
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
             print(f'{dt_string}: Successful query of {self.deviceID} records')
 
-            self.last_record = self.local_cur.fetchall()
+            self.last_record = self.local_cur.fetchone()
 
         except Exception as e:
             print(f"Error querying records from MariaDB: {e}")
         
     def get_time(self):
-        return convert_dt(self.last_record[0][1])
+        return convert_dt(self.last_record[1])
 
     def get_temperature(self):
-        return self.last_record[0][2]
+        return self.last_record[2]
 
     def get_humidity(self):
-        return self.last_record[0][3]
+        return self.last_record[3]
 
     # returns list containing [device_name, current_date_time, temperature, humidity]
     def query_data(self, quantity):
@@ -99,6 +104,9 @@ class Device():
             paper_bgcolor='rgb(0, 0, 0, 0)', 
             #plot_bgcolor='#c8c8c8', 
             font_color='white'
+        )   
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
         )       
         #fig.data[0].line.color = 'blue'
         return fig
@@ -118,7 +126,10 @@ class Device():
         fig.update_layout(paper_bgcolor='rgb(0, 0, 0, 0)', 
             #plot_bgcolor='#c8c8c8', 
             font_color='white'
-        )       
+        )    
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
+        )   
         #fig.data[0].line.color = 'blue'
         return fig
 
@@ -141,6 +152,9 @@ class Device():
             font_color='white',
             legend_title=''
         )       
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
+        )   
         #fig.data[0].line.color = 'blue'
         return fig
 
