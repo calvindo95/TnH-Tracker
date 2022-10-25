@@ -101,9 +101,9 @@ class Device():
             font_color='white'
         )   
         fig.update_xaxes(
-            tickformat="%I:%M %p\n%B %d, %Y"
-        )       
-        #fig.data[0].line.color = 'blue'
+            tickformat="%I:%M %p\n%B %d, %Y",
+        )
+        #fig.data = [t for t in fig.data if t.mode == "lines"]
         return fig
 
     def get_humidity_graph(self, quantity, x_axis: list, y_axis: list):
@@ -125,7 +125,7 @@ class Device():
         fig.update_xaxes(
             tickformat="%I:%M %p\n%B %d, %Y"
         )   
-        #fig.data[0].line.color = 'blue'
+        #fig.data = [t for t in fig.data if t.mode == "lines"]
         return fig
 
     def get_combined_graph(self, quantity, x_time: list, y_temp: list, y_humidity: list):
@@ -138,7 +138,7 @@ class Device():
             })
         fig = px.line(
             df, x="Time", 
-            y=["Humidity (%)", "Temperature (F)"],
+            y=["Temperature (F)", "Humidity (%)"],
             title=f'Humidity for the Last {hours} Hour(s)'
         )
         fig.update_layout(

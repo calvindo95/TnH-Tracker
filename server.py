@@ -64,10 +64,11 @@ cur = conn.cursor()
 
 device1 = Device(cur, 1)
 device2 = Device(cur, 2)
+device3 = Device(cur, 3)
 
 app.layout = html.Div([
     dcc.Tabs(
-        id="graph_data", 
+        id="main_tabs", 
         className='custom_tabs',
         children=[
             dcc.Tab(
@@ -130,6 +131,36 @@ app.layout = html.Div([
                     )
                 ]
             ),
+            dcc.Tab(
+                label=f'{device3.get_devname()}', 
+                className='tab_style',
+                selected_className='tab_selected',
+                children=[
+                    dcc.Tabs(
+                        id='subtab3',
+                        children = [
+                            dcc.Tab(
+                                label='1 Hour Data', 
+                                className='tab_style',
+                                selected_className='tab_selected',
+                                children=[]
+                            ),
+                            dcc.Tab(
+                                label='24 Hour Data', 
+                                className='tab_style',
+                                selected_className='tab_selected',
+                                children=[]
+                            ),
+                            dcc.Tab(
+                                label='7 Day Data', 
+                                className='tab_style',
+                                selected_className='tab_selected',
+                                children=[]
+                            )
+                        ]
+                    )
+                ]
+            )
         ], 
     ), 
     html.Div(id='content')
@@ -137,13 +168,22 @@ app.layout = html.Div([
 
 @app.callback(
     Output('content', 'children'), 
-    [Input('graph_data', 'value'),
+    [Input('main_tabs', 'value'),
     Input('subtab1', 'value'),
-    Input('subtab2', 'value')])
+    Input('subtab2', 'value'),
+    Input('subtab3', 'value')])
 
-def render_content(tab, subtab1, subtab2):
+def render_content(main_tabs, subtab1, subtab2, subtab3):
     start = datetime.now()
-    if tab == 'tab-1':
+
+    if not conn.open:
+        conn.reconnect()
+
+    global cur
+    if cur.closed:
+        cur = conn.cursor()
+    
+    if main_tabs == 'tab-1':
         dev = Device(cur, 1)
 
         if subtab1 == 'tab-1':
@@ -159,7 +199,7 @@ def render_content(tab, subtab1, subtab2):
         print(f'{dt_string}: Content rendered in: {end - start}')
         return show_tab(dev, fig_humidity, fig_temp, fig_combined)
 
-    elif tab == 'tab-2':
+    elif main_tabs == 'tab-2':
         dev = Device(cur, 2)
         
         if subtab2 == 'tab-1':
@@ -169,6 +209,23 @@ def render_content(tab, subtab1, subtab2):
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(1440)
         
         elif subtab2 == 'tab-3':
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(10080)
+
+        end = datetime.now()
+        dt_string = end.strftime("%Y-%m-%d %H:%M:%S")
+        print(f'{dt_string}: Content rendered in: {end - start}')
+        return show_tab(dev, fig_humidity, fig_temp, fig_combined)
+
+    elif main_tabs == 'tab-3':
+        dev = Device(cur, 3)
+        
+        if subtab3 == 'tab-1':
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(60)
+        
+        elif subtab3 == 'tab-2':
+            fig_humidity, fig_temp, fig_combined = dev.get_graphs(1440)
+        
+        elif subtab3 == 'tab-3':
             fig_humidity, fig_temp, fig_combined = dev.get_graphs(10080)
 
         end = datetime.now()
