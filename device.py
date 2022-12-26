@@ -169,3 +169,155 @@ class Device():
 
     def get_devname(self):
         return self.dev_name
+
+class Graph():
+    def __init__(self, dev1, dev2, dev3):
+        self.dev1 = dev1
+        self.dev2 = dev2
+        self.dev3 = dev3
+
+    def get_graph(self, quantity):
+        x1_time, y1_temp, y1_humidity = self.dev1.query_data(quantity)
+        _, y2_temp, y2_humidity = self.dev2.query_data(quantity)
+        _, y3_temp, y3_humidity = self.dev3.query_data(quantity)
+
+        hours = quantity/60
+
+        df = pd.DataFrame({
+            "Time": x1_time,
+            f"{self.dev1.get_devname()}": y1_temp,
+            f"{self.dev2.get_devname()}": y2_temp,
+            f"{self.dev3.get_devname()}": y3_temp,
+            })
+        fig = px.line(
+            df, x="Time", 
+            y=[f"{self.dev1.get_devname()}", f"{self.dev2.get_devname()}", f"{self.dev3.get_devname()}"],
+            title=f'Temperature for the Last {hours} Hour(s)'
+        )
+        fig.update_layout(
+            paper_bgcolor='rgb(0, 0, 0, 0)', 
+            #plot_bgcolor='#c8c8c8', 
+            font_color='white',
+            legend_title=''
+        )       
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
+        )   
+        #fig.data[0].line.color = 'blue'
+        return fig
+
+    def get_graphs(self, quantity):
+        x1_time, y1_temp, y1_humidity = self.dev1.query_data(quantity)
+        _, y2_temp, y2_humidity = self.dev2.query_data(quantity)
+        _, y3_temp, y3_humidity = self.dev3.query_data(quantity)
+
+        y_temp = []
+        y_humidity = []
+
+        y_temp.append(y1_temp)
+        y_temp.append(y2_temp)
+        y_temp.append(y3_temp)
+
+        y_humidity.append(y1_humidity)
+        y_humidity.append(y2_humidity)
+        y_humidity.append(y3_humidity)        
+
+        temp_graph = self.get_temp_graph(quantity, x1_time, y_temp)
+        humidity_graph = self.get_humidity_graph(quantity, x1_time, y_humidity)
+        combined_graph = self.get_combined_graph(quantity, x1_time, y_temp, y_humidity)
+        
+        print('I got here')
+        return humidity_graph, temp_graph, combined_graph
+
+    def get_temp_graph(self, quantity, x_axis: list, y_axis: list):
+        hours = quantity/60
+
+        y1_temp, y2_temp, y3_temp  = y_axis 
+
+        df = pd.DataFrame({
+            "Time": x_axis,
+            f"{self.dev1.get_devname()}": y1_temp,
+            f"{self.dev2.get_devname()}": y2_temp,
+            f"{self.dev3.get_devname()}": y3_temp,
+            })
+        fig = px.line(
+            df, x="Time", 
+            y=[f"{self.dev1.get_devname()}", f"{self.dev2.get_devname()}", f"{self.dev3.get_devname()}"],
+            title=f'Temperature for the Last {hours} Hour(s)'
+        )
+        fig.update_layout(
+            paper_bgcolor='rgb(0, 0, 0, 0)', 
+            #plot_bgcolor='#c8c8c8', 
+            font_color='white',
+            legend_title=''
+        )       
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
+        )   
+        #fig.data[0].line.color = 'blue'
+        return fig
+
+    def get_humidity_graph(self, quantity, x_axis: list, y_axis: list):
+        hours = quantity/60
+
+        y1_humidity, y2_humidity, y3_humidity  = y_axis 
+
+        df = pd.DataFrame({
+            "Time": x_axis,
+            f"{self.dev1.get_devname()}": y1_humidity,
+            f"{self.dev2.get_devname()}": y2_humidity,
+            f"{self.dev3.get_devname()}": y3_humidity,
+            })
+        fig = px.line(
+            df, x="Time", 
+            y=[f"{self.dev1.get_devname()}", f"{self.dev2.get_devname()}", f"{self.dev3.get_devname()}"],
+            title=f'Humidity for the Last {hours} Hour(s)'
+        )
+        fig.update_layout(paper_bgcolor='rgb(0, 0, 0, 0)', 
+            #plot_bgcolor='#c8c8c8', 
+            font_color='white'
+        )    
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
+        )   
+        #fig.data = [t for t in fig.data if t.mode == "lines"]
+        return fig
+
+    def get_combined_graph(self, quantity, x_time: list, y_temp: list, y_humidity: list):
+        hours = quantity/60
+
+        y1_temp, y2_temp, y3_temp  = y_temp
+        y1_humidity, y2_humidity, y3_humidity  = y_humidity
+
+
+        df = pd.DataFrame({
+            "Time": x_time,
+            f"{self.dev1.get_devname()} Temperature": y1_temp,
+            f"{self.dev2.get_devname()} Temperature": y2_temp,
+            f"{self.dev3.get_devname()} Temperature": y3_temp,
+            f"{self.dev1.get_devname()} Humidity": y1_humidity,
+            f"{self.dev2.get_devname()} Humidity": y2_humidity,
+            f"{self.dev3.get_devname()} Humidity": y3_humidity,
+            })
+        fig = px.line(
+            df, x="Time", 
+            y=[f"{self.dev1.get_devname()} Temperature", 
+                f"{self.dev2.get_devname()} Temperature",
+                f"{self.dev3.get_devname()} Temperature", 
+                f"{self.dev1.get_devname()} Humidity",
+                f"{self.dev2.get_devname()} Humidity",
+                f"{self.dev3.get_devname()} Humidity"
+                ],
+            title=f'Humidity for the Last {hours} Hour(s)'
+        )
+        fig.update_layout(
+            paper_bgcolor='rgb(0, 0, 0, 0)', 
+            #plot_bgcolor='#c8c8c8', 
+            font_color='white',
+            legend_title=''
+        )       
+        fig.update_xaxes(
+            tickformat="%I:%M %p\n%B %d, %Y"
+        )   
+        #fig.data[0].line.color = 'blue'
+        return fig
