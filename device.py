@@ -3,20 +3,58 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import pandas as pd
 import plotly.graph_objects as go
+import logging
+import mariadb
+import time
+import config # import local configs
+import threading
 
+# Initialize logger by getting 'gunicorn.error' logger
+logger = logging.getLogger('gunicorn.error')
 
 # convert dt_object to 12hr time
 def convert_dt(dt_obj):
     return dt_obj.strftime("%m/%d %I:%M:%S %p")
 
 class Device():
-    def __init__(self, local_cur, deviceID):
-        self.local_cur = local_cur
+    def __init__(self, deviceID):
+        conn = self.connect_to_db()
+        cur = conn.cursor()
+
+        self.local_conn = conn
+        self.local_cur = cur
         self.deviceID = deviceID
         self.dev_name = self.query_devname()
         self.last_record = []
+        self.data = []
+
+    def connect_to_db(self):
+        # Connect to MariaDB Platform
+        try:
+            conn = mariadb.connect(
+                user=config.user,
+                password=config.password,
+                host=config.host,
+                port=config.port,
+                database=config.database,
+                autocommit=True
+            )
+
+            return conn
+        except mariadb.Error as e:
+            logger.error(f"Error connecting to MariaDB Platform: {e}")
+            time.sleep(5)
+            self.connect_to_db()
+
+    def check_db_connection(self):
+        if not self.local_conn.open:
+            self.local_conn.reconnect()
+
+        if self.local_cur.closed:
+            self.local_cur = self.local_conn.cursor()
 
     def query_last_record(self):
+        self.check_db_connection()
         try:
             query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity 
                     FROM Device 
@@ -28,26 +66,34 @@ class Device():
             data = (self.deviceID,)
             self.local_cur.execute(query, data)
 
-            now = datetime.now()
-            dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of {self.deviceID} records')
+            logger.debug(f'Successful query of last record from {self.dev_name}')
 
             self.last_record = self.local_cur.fetchone()
 
         except Exception as e:
-            print(f"Error querying records from MariaDB: {e}")
+            logger.error(f"Error querying records from MariaDB: {e}")
         
     def get_time(self):
+        if not self.last_record:
+            self.query_last_record()
+
         return convert_dt(self.last_record[1])
 
     def get_temperature(self):
+        if not self.last_record:
+            self.query_last_record()
+
         return self.last_record[2]
 
     def get_humidity(self):
+        if not self.last_record:
+            self.query_last_record()
+
         return self.last_record[3]
 
     # returns list containing [device_name, current_date_time, temperature, humidity]
     def query_data(self, quantity):
+        self.check_db_connection()
         try:
             query = '''SELECT Data_History.CurrentDateTime, History.Temperature, History.Humidity
                     FROM Device  
@@ -65,14 +111,16 @@ class Device():
                 y_temp.append(row[1])
                 y_humidity.append(row[2])
 
-            now = datetime.now()
-            dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of device {self.deviceID}: {quantity} temperature and humidity datapoints pulled')
-            
+            logger.debug(f'Successful query of {quantity} records from Device {self.dev_name}')
+
+            # update latest data
+            self.query_last_record()
+
+            self.data = x_time, y_temp, y_humidity
             return x_time, y_temp, y_humidity
 
         except Exception as e:
-            print(f"Error querying temp from MariaDB: {e}")
+            logger.error(f"Error querying temp from MariaDB: {e}")
 
     def get_graphs(self, quantity):
         x_time, y_temp, y_humidity = self.query_data(quantity)
@@ -154,18 +202,18 @@ class Device():
         return fig
 
     def query_devname(self):
+        self.check_db_connection()
         try:
             query = '''SELECT DevName.DevName FROM DevName 
                         LEFT JOIN Device ON Device.DevNameID=DevName.DevNameID 
                         WHERE DeviceID=%s'''
             data = (self.deviceID,)
             self.local_cur.execute(query, data)
-            now = datetime.now()
-            dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-            print(f'{dt_string}: Successful query of device {self.deviceID}')
-            return self.local_cur.fetchone()[0]
+            tmpdevname = self.local_cur.fetchone()[0]
+            logger.debug(f'Successful query of Device name {tmpdevname}')
+            return tmpdevname
         except Exception as e:
-            print(f"Error querying devname from MariaDB: {e}")
+            logger.error(f"Error querying devname from MariaDB: {e}")
 
     def get_devname(self):
         return self.dev_name
@@ -175,6 +223,9 @@ class Graph():
         self.dev1 = dev1
         self.dev2 = dev2
         self.dev3 = dev3
+        self.temp_graph = None
+        self.humidity_graph = None
+        self.combined_graph = None
 
     def get_graph(self, quantity):
         x1_time, y1_temp, y1_humidity = self.dev1.query_data(quantity)
@@ -207,9 +258,27 @@ class Graph():
         return fig
 
     def get_graphs(self, quantity):
-        x1_time, y1_temp, y1_humidity = self.dev1.query_data(quantity)
-        _, y2_temp, y2_humidity = self.dev2.query_data(quantity)
-        _, y3_temp, y3_humidity = self.dev3.query_data(quantity)
+        start = datetime.now()
+
+        t1 = threading.Thread(target=self.dev1.query_data, args=(quantity,))
+        t2 = threading.Thread(target=self.dev2.query_data, args=(quantity,))
+        t3 = threading.Thread(target=self.dev3.query_data, args=(quantity,))
+
+        t1.start()
+        t2.start()
+        t3.start()
+
+        t1.join()
+        t2.join()
+        t3.join()
+
+        end = datetime.now()
+        logger.debug(f': Data queried in: {end - start}')
+        start = datetime.now()
+
+        x1_time, y1_temp, y1_humidity = self.dev1.data
+        _, y2_temp, y2_humidity = self.dev2.data
+        _, y3_temp, y3_humidity = self.dev3.data
 
         y_temp = []
         y_humidity = []
@@ -222,14 +291,28 @@ class Graph():
         y_humidity.append(y2_humidity)
         y_humidity.append(y3_humidity)        
 
-        temp_graph = self.get_temp_graph(quantity, x1_time, y_temp)
-        humidity_graph = self.get_humidity_graph(quantity, x1_time, y_humidity)
-        combined_graph = self.get_combined_graph(quantity, x1_time, y_temp, y_humidity)
-        
-        print('I got here')
+        t1 = threading.Thread(target=self.create_temp_graph, args=(quantity, x1_time, y_temp,))
+        t2 = threading.Thread(target=self.create_humidity_graph, args=(quantity, x1_time, y_humidity,))
+        t3 = threading.Thread(target=self.create_combined_graph, args=(quantity, x1_time, y_temp, y_humidity,))
+
+        t1.start()
+        t2.start()
+        t3.start()
+
+        t1.join()
+        t2.join()
+        t3.join()
+
+        temp_graph = self.temp_graph
+        humidity_graph = self.humidity_graph
+        combined_graph = self.combined_graph
+
+        end = datetime.now()
+        logger.debug(f': Graphs rendered in: {end - start}')
+
         return humidity_graph, temp_graph, combined_graph
 
-    def get_temp_graph(self, quantity, x_axis: list, y_axis: list):
+    def create_temp_graph(self, quantity, x_axis: list, y_axis: list):
         hours = quantity/60
 
         y1_temp, y2_temp, y3_temp  = y_axis 
@@ -255,9 +338,10 @@ class Graph():
             tickformat="%I:%M %p\n%B %d, %Y"
         )   
         #fig.data[0].line.color = 'blue'
+        self.temp_graph = fig
         return fig
 
-    def get_humidity_graph(self, quantity, x_axis: list, y_axis: list):
+    def create_humidity_graph(self, quantity, x_axis: list, y_axis: list):
         hours = quantity/60
 
         y1_humidity, y2_humidity, y3_humidity  = y_axis 
@@ -281,9 +365,10 @@ class Graph():
             tickformat="%I:%M %p\n%B %d, %Y"
         )   
         #fig.data = [t for t in fig.data if t.mode == "lines"]
+        self.humidity_graph = fig
         return fig
 
-    def get_combined_graph(self, quantity, x_time: list, y_temp: list, y_humidity: list):
+    def create_combined_graph(self, quantity, x_time: list, y_temp: list, y_humidity: list):
         hours = quantity/60
 
         y1_temp, y2_temp, y3_temp  = y_temp
@@ -320,4 +405,5 @@ class Graph():
             tickformat="%I:%M %p\n%B %d, %Y"
         )   
         #fig.data[0].line.color = 'blue'
+        self.combined_graph = fig
         return fig
