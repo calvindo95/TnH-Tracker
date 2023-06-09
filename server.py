@@ -109,7 +109,7 @@ def show_all_tab(dev1: Device, dev2: Device, dev3: Device, fig_humidity, fig_tem
         )
 
     end = datetime.now()
-    app.logger.debug(f': Webpage rendered in: {end - start}')
+    app.logger.debug(f'Webpage rendered in: {end - start}')
 
     return temp
 
@@ -257,55 +257,58 @@ def render_content(main_tabs, subtab1, subtab2, subtab3, subtab4):
         all = Graph(dev1, dev2, dev3)
         
         if subtab1 == 'tab-1':
-            fig_humidity, fig_temp, fig_combined = all.get_graphs(60)
+            fig_humidity, fig_temp, fig_combined = all.get_graphs(1)
         
         elif subtab1 == 'tab-2':
-            fig_humidity, fig_temp, fig_combined = all.get_graphs(1440)
+            fig_humidity, fig_temp, fig_combined = all.get_graphs(24)
         
         elif subtab1 == 'tab-3':
-            fig_humidity, fig_temp, fig_combined = all.get_graphs(10080)
+            fig_humidity, fig_temp, fig_combined = all.get_graphs(168)
 
+        end = datetime.now()
+        app.logger.debug(f'Data and Graphs rendered in: {end - start}')
         return show_all_tab(dev1, dev2, dev3, fig_humidity, fig_temp, fig_combined)
     
     elif main_tabs == 'tab-2':
         if subtab2 == 'tab-1':
-            fig_humidity, fig_temp, fig_combined = dev1.get_graphs(60)
+            fig_humidity, fig_temp, fig_combined = dev1.get_graphs(1)
 
         elif subtab2 == 'tab-2':
-            fig_humidity, fig_temp, fig_combined = dev1.get_graphs(1440)
+            fig_humidity, fig_temp, fig_combined = dev1.get_graphs(24)
                 
         elif subtab2 == 'tab-3':
-            fig_humidity, fig_temp, fig_combined = dev1.get_graphs(10080)
+            fig_humidity, fig_temp, fig_combined = dev1.get_graphs(168)
 
         end = datetime.now()
-        app.logger.debug(f'Content rendered in: {end - start}')
+        app.logger.debug(f'Data and Graphs rendered in: {end - start}')
         return show_tab(dev1, fig_humidity, fig_temp, fig_combined)
 
     elif main_tabs == 'tab-3':
         if subtab3 == 'tab-1':
-            fig_humidity, fig_temp, fig_combined = dev2.get_graphs(60)
+            fig_humidity, fig_temp, fig_combined = dev2.get_graphs(1)
         
         elif subtab3 == 'tab-2':
-            fig_humidity, fig_temp, fig_combined = dev2.get_graphs(1440)
+            fig_humidity, fig_temp, fig_combined = dev2.get_graphs(24)
         
         elif subtab3 == 'tab-3':
-            fig_humidity, fig_temp, fig_combined = dev2.get_graphs(10080)
+            fig_humidity, fig_temp, fig_combined = dev2.get_graphs(168)
 
-        app.logger.debug(f'Content rendered in: {end - start}')
+        end = datetime.now()
+        app.logger.debug(f'Data and Graphs rendered in: {end - start}')
         return show_tab(dev2, fig_humidity, fig_temp, fig_combined)
 
     elif main_tabs == 'tab-4':
         if subtab4 == 'tab-1':
-            fig_humidity, fig_temp, fig_combined = dev3.get_graphs(60)
+            fig_humidity, fig_temp, fig_combined = dev3.get_graphs(1)
         
         elif subtab4 == 'tab-2':
-            fig_humidity, fig_temp, fig_combined = dev3.get_graphs(1440)
+            fig_humidity, fig_temp, fig_combined = dev3.get_graphs(24)
         
         elif subtab4 == 'tab-3':
-            fig_humidity, fig_temp, fig_combined = dev3.get_graphs(10080)
+            fig_humidity, fig_temp, fig_combined = dev3.get_graphs(168)
 
         end = datetime.now()
-        app.logger.debug(f'Content rendered in: {end - start}')
+        app.logger.debug(f'Data and Graphs rendered in: {end - start}')
         return show_tab(dev3, fig_humidity, fig_temp, fig_combined)
 
 if __name__ == '__main__':
