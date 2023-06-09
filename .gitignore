@@ -1,0 +1,3 @@
+gunicorn*
+__pycache__/*
+gunicorn.log
