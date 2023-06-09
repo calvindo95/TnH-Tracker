@@ -31,53 +31,45 @@ class Multidevice():
         logger.debug(f'Data queried in: {end - start}')
         start = datetime.now()
 
-        x1_time, y1_temp, y1_humidity = self.devices[0].data
-        _, y2_temp, y2_humidity = self.devices[1].data
-        _, y3_temp, y3_humidity = self.devices[2].data
+        # device[[time], [temp], [humidity]]
+        devices_tth = []
 
-        if len(y1_humidity) != len(y2_humidity) or len(y2_humidity) != len(y3_humidity) or len(y1_humidity) != len(y3_humidity):
-            logger.debug(f'Data length is not equal, truncating data: dev1:{len(y1_humidity)}, dev2:{len(y2_humidity)}, dev3:{len(y3_humidity)}')
-            
-            # find device with limiting len
-            tmp_list = []
-            tmp_list.append(len(y1_humidity))
-            tmp_list.append(len(y2_humidity))
-            tmp_list.append(len(y3_humidity))
+        for device in self.devices:
+            devices_tth.append(device.data[0])
 
-            tmp_min_len = min(tmp_list)
-
-            # truncate lists to tmp_min_len
-            # dev1
-            x1_time = x1_time[0:tmp_min_len]
-            y1_temp = y1_temp[0:tmp_min_len]
-            y1_humidity = y1_humidity[0:tmp_min_len]
-
-            # dev2
-            y2_temp = y2_temp[0:tmp_min_len]
-            y2_humidity = y2_humidity[0:tmp_min_len]
-
-            # dev3
-            y3_temp = y3_temp[0:tmp_min_len]
-            y3_humidity = y3_humidity[0:tmp_min_len]
-
-            logger.debug(f'Data length is not equal, data len after truncating: dev1:{len(y1_humidity)}, dev2:{len(y2_humidity)}, dev3:{len(y3_humidity)}')
+        tth_set = set(map(len,devices_tth))
 
         y_temp = []
         y_humidity = []
+        time = []
 
-        y_temp.append(y1_temp)
-        y_temp.append(y2_temp)
-        y_temp.append(y3_temp)
+        if len(tth_set) != 1:
+            logger.debug(f'Data length is not equal, truncating data: dev1:{len(self.devices[0].data[0])}, dev2:{len(self.devices[1].data[0])}, dev3:{len(self.devices[2].data[0])}')
+            
+            # find device with limiting len
+            tmp_min_len = min(tth_set)
 
-        y_humidity.append(y1_humidity)
-        y_humidity.append(y2_humidity)
-        y_humidity.append(y3_humidity)        
+            # truncate data to tmp_min_len
+            time = self.devices[0].data[0][0:tmp_min_len]
+
+            for device in self.devices:
+                y_temp.append(device.data[1][0:tmp_min_len])
+                y_humidity.append(device.data[2][0:tmp_min_len])
+
+            logger.debug(f'Data length is not equal, data len after truncating: dev1:{len(y_temp[0])}, dev2:{len(y_temp[1])}, dev3:{len(y_temp[2])}')
+        else:
+            time = self.devices[0].data[0]
+
+            for device in self.devices:
+                y_temp.append(device.data[1])
+                y_humidity.append(device.data[2])
+
 
         pool = Pool(pool_size)
 
-        pool.apply_async(self.create_temp_graph,(hours, x1_time, y_temp,))
-        pool.apply_async(self.create_humidity_graph,(hours, x1_time, y_humidity,))
-        pool.apply_async(self.create_combined_graph,(hours, x1_time, y_temp, y_humidity,))
+        pool.apply_async(self.create_temp_graph,(hours, time, y_temp,))
+        pool.apply_async(self.create_humidity_graph,(hours, time, y_humidity,))
+        pool.apply_async(self.create_combined_graph,(hours, time, y_temp, y_humidity,))
 
         pool.close()
         pool.join()
@@ -92,7 +84,6 @@ class Multidevice():
         return humidity_graph, temp_graph, combined_graph
 
     def create_temp_graph(self, hours, x_axis: list, y_axis: list):
-        start = datetime.now()
         y1_temp, y2_temp, y3_temp  = y_axis 
 
         df = pd.DataFrame({
@@ -116,11 +107,10 @@ class Multidevice():
         )
         self.temp_graph = fig
 
-        end = datetime.now()
+        logger.debug(f'Successfully rendered temp graph')
         return fig
 
     def create_humidity_graph(self, hours, x_axis: list, y_axis: list):
-        start = datetime.now()
         y1_humidity, y2_humidity, y3_humidity  = y_axis 
 
         df = pd.DataFrame({
@@ -145,11 +135,10 @@ class Multidevice():
         #fig.data = [t for t in fig.data if t.mode == "lines"]
         self.humidity_graph = fig
 
-        end = datetime.now()
+        logger.debug(f'Successfully rendered humidity graph')
         return fig
 
     def create_combined_graph(self, hours, x_time: list, y_temp: list, y_humidity: list):
-        start = datetime.now()
         y1_temp, y2_temp, y3_temp  = y_temp
         y1_humidity, y2_humidity, y3_humidity  = y_humidity
 
@@ -183,5 +172,5 @@ class Multidevice():
         )   
         self.combined_graph = fig
 
-        end = datetime.now()
+        logger.debug(f'Successfully rendered combined graph')
         return fig

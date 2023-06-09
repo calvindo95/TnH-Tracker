@@ -23,7 +23,7 @@ class Device():
         self.deviceID = deviceID
         self.dev_name = self.query_devname()
         self.last_record = [None, None, None, None]
-        self.data = []
+        self.data = []  # time, temp, humidity
 
     def connect_to_db(self):
         # Connect to MariaDB Platform
