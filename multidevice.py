@@ -117,7 +117,6 @@ class Multidevice():
         self.temp_graph = fig
 
         end = datetime.now()
-        logger.debug(f'Temp graph rendered in: {end - start}')
         return fig
 
     def create_humidity_graph(self, hours, x_axis: list, y_axis: list):
@@ -147,7 +146,6 @@ class Multidevice():
         self.humidity_graph = fig
 
         end = datetime.now()
-        logger.debug(f'Humidity graph rendered in: {end - start}')
         return fig
 
     def create_combined_graph(self, hours, x_time: list, y_temp: list, y_humidity: list):
@@ -186,5 +184,4 @@ class Multidevice():
         self.combined_graph = fig
 
         end = datetime.now()
-        logger.debug(f'Combined graph rendered in: {end - start}')
         return fig
