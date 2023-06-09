@@ -2,8 +2,10 @@ import dash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
-from device import *
 import logging
+
+from device import *
+from multidevice import *
 
 # Initialize server
 app = dash.Dash(__name__)
@@ -254,7 +256,7 @@ app.layout = html.Div([
 def render_content(main_tabs, subtab1, subtab2, subtab3, subtab4):
     start = datetime.now()
     if main_tabs == 'tab-1':
-        all = Graph(dev1, dev2, dev3)
+        all = Multidevice(dev1, dev2, dev3)
         
         if subtab1 == 'tab-1':
             fig_humidity, fig_temp, fig_combined = all.get_graphs(1)
