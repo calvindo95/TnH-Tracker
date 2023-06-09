@@ -1,8 +1,8 @@
-DROP DATABASE IF EXISTS humidity_tracker0;
+DROP DATABASE IF EXISTS humidity_tracker;
 
-CREATE DATABASE humidity_tracker0;
+CREATE DATABASE humidity_tracker;
 
-USE humidity_tracker0;
+USE humidity_tracker;
 
 CREATE TABLE DevName(
     DevNameID INT NOT NULL AUTO_INCREMENT,
