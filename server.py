@@ -256,7 +256,8 @@ app.layout = html.Div([
 def render_content(main_tabs, subtab1, subtab2, subtab3, subtab4):
     start = datetime.now()
     if main_tabs == 'tab-1':
-        all = Multidevice(dev1, dev2, dev3)
+        devices = [dev1, dev2, dev3]
+        all = Multidevice(devices)
         
         if subtab1 == 'tab-1':
             fig_humidity, fig_temp, fig_combined = all.get_graphs(1)

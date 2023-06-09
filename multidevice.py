@@ -2,16 +2,16 @@ from datetime import datetime
 import plotly.express as px
 import pandas as pd
 import logging
-import threading
+from multiprocessing.pool import ThreadPool as Pool
 
 # Initialize logger by getting 'gunicorn.error' logger
 logger = logging.getLogger('gunicorn.error')
 
+pool_size = 4
+
 class Multidevice():
-    def __init__(self, dev1, dev2, dev3):
-        self.dev1 = dev1
-        self.dev2 = dev2
-        self.dev3 = dev3
+    def __init__(self, devices: list):
+        self.devices = devices
         self.temp_graph = None
         self.humidity_graph = None
         self.combined_graph = None
@@ -19,25 +19,21 @@ class Multidevice():
     def get_graphs(self, hours):
         start = datetime.now()
 
-        t1 = threading.Thread(target=self.dev1.query_data, args=(hours,))
-        t2 = threading.Thread(target=self.dev2.query_data, args=(hours,))
-        t3 = threading.Thread(target=self.dev3.query_data, args=(hours,))
+        pool = Pool(pool_size)
 
-        t1.start()
-        t2.start()
-        t3.start()
+        for device in self.devices:
+            pool.apply_async(device.query_data,(hours,))
 
-        t1.join()
-        t2.join()
-        t3.join()
+        pool.close()
+        pool.join()
 
         end = datetime.now()
         logger.debug(f'Data queried in: {end - start}')
         start = datetime.now()
 
-        x1_time, y1_temp, y1_humidity = self.dev1.data
-        _, y2_temp, y2_humidity = self.dev2.data
-        _, y3_temp, y3_humidity = self.dev3.data
+        x1_time, y1_temp, y1_humidity = self.devices[0].data
+        _, y2_temp, y2_humidity = self.devices[1].data
+        _, y3_temp, y3_humidity = self.devices[2].data
 
         if len(y1_humidity) != len(y2_humidity) or len(y2_humidity) != len(y3_humidity) or len(y1_humidity) != len(y3_humidity):
             logger.debug(f'Data length is not equal, truncating data: dev1:{len(y1_humidity)}, dev2:{len(y2_humidity)}, dev3:{len(y3_humidity)}')
@@ -51,7 +47,6 @@ class Multidevice():
             tmp_min_len = min(tmp_list)
 
             # truncate lists to tmp_min_len
-
             # dev1
             x1_time = x1_time[0:tmp_min_len]
             y1_temp = y1_temp[0:tmp_min_len]
@@ -78,17 +73,14 @@ class Multidevice():
         y_humidity.append(y2_humidity)
         y_humidity.append(y3_humidity)        
 
-        t1 = threading.Thread(target=self.create_temp_graph, args=(hours, x1_time, y_temp,))
-        t2 = threading.Thread(target=self.create_humidity_graph, args=(hours, x1_time, y_humidity,))
-        t3 = threading.Thread(target=self.create_combined_graph, args=(hours, x1_time, y_temp, y_humidity,))
+        pool = Pool(pool_size)
 
-        t1.start()
-        t2.start()
-        t3.start()
+        pool.apply_async(self.create_temp_graph,(hours, x1_time, y_temp,))
+        pool.apply_async(self.create_humidity_graph,(hours, x1_time, y_humidity,))
+        pool.apply_async(self.create_combined_graph,(hours, x1_time, y_temp, y_humidity,))
 
-        t1.join()
-        t2.join()
-        t3.join()
+        pool.close()
+        pool.join()
 
         temp_graph = self.temp_graph
         humidity_graph = self.humidity_graph
@@ -105,13 +97,13 @@ class Multidevice():
 
         df = pd.DataFrame({
             "Time": x_axis,
-            f"{self.dev1.get_devname()}": y1_temp,
-            f"{self.dev2.get_devname()}": y2_temp,
-            f"{self.dev3.get_devname()}": y3_temp,
+            f"{self.devices[0].get_devname()}": y1_temp,
+            f"{self.devices[1].get_devname()}": y2_temp,
+            f"{self.devices[2].get_devname()}": y3_temp,
             })
         fig = px.line(
             df, x="Time", 
-            y=[f"{self.dev1.get_devname()}", f"{self.dev2.get_devname()}", f"{self.dev3.get_devname()}"],
+            y=[f"{self.devices[0].get_devname()}", f"{self.devices[1].get_devname()}", f"{self.devices[2].get_devname()}"],
             title=f'Temperature for the Last {hours} Hour(s)'
         )
         fig.update_layout(
@@ -134,13 +126,13 @@ class Multidevice():
 
         df = pd.DataFrame({
             "Time": x_axis,
-            f"{self.dev1.get_devname()}": y1_humidity,
-            f"{self.dev2.get_devname()}": y2_humidity,
-            f"{self.dev3.get_devname()}": y3_humidity,
+            f"{self.devices[0].get_devname()}": y1_humidity,
+            f"{self.devices[1].get_devname()}": y2_humidity,
+            f"{self.devices[2].get_devname()}": y3_humidity,
             })
         fig = px.line(
             df, x="Time", 
-            y=[f"{self.dev1.get_devname()}", f"{self.dev2.get_devname()}", f"{self.dev3.get_devname()}"],
+            y=[f"{self.devices[0].get_devname()}", f"{self.devices[1].get_devname()}", f"{self.devices[2].get_devname()}"],
             title=f'Humidity for the Last {hours} Hour(s)'
         )
         fig.update_layout(
@@ -165,21 +157,21 @@ class Multidevice():
 
         df = pd.DataFrame({
             "Time": x_time,
-            f"{self.dev1.get_devname()} Temperature": y1_temp,
-            f"{self.dev2.get_devname()} Temperature": y2_temp,
-            f"{self.dev3.get_devname()} Temperature": y3_temp,
-            f"{self.dev1.get_devname()} Humidity": y1_humidity,
-            f"{self.dev2.get_devname()} Humidity": y2_humidity,
-            f"{self.dev3.get_devname()} Humidity": y3_humidity,
+            f"{self.devices[0].get_devname()} Temperature": y1_temp,
+            f"{self.devices[1].get_devname()} Temperature": y2_temp,
+            f"{self.devices[2].get_devname()} Temperature": y3_temp,
+            f"{self.devices[0].get_devname()} Humidity": y1_humidity,
+            f"{self.devices[1].get_devname()} Humidity": y2_humidity,
+            f"{self.devices[2].get_devname()} Humidity": y3_humidity,
             })
         fig = px.line(
             df, x="Time", 
-            y=[f"{self.dev1.get_devname()} Temperature", 
-                f"{self.dev2.get_devname()} Temperature",
-                f"{self.dev3.get_devname()} Temperature", 
-                f"{self.dev1.get_devname()} Humidity",
-                f"{self.dev2.get_devname()} Humidity",
-                f"{self.dev3.get_devname()} Humidity"
+            y=[f"{self.devices[0].get_devname()} Temperature", 
+                f"{self.devices[1].get_devname()} Temperature",
+                f"{self.devices[2].get_devname()} Temperature", 
+                f"{self.devices[0].get_devname()} Humidity",
+                f"{self.devices[1].get_devname()} Humidity",
+                f"{self.devices[2].get_devname()} Humidity"
                 ],
             title=f'Temperature and Humidity for the Last {hours} Hour(s)'
         )
