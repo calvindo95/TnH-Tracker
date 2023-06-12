@@ -94,9 +94,7 @@ class Multidevice():
 
         my_dict = dict(zip(columns, data))
 
-        df = pd.DataFrame(
-            my_dict
-            )
+        df = pd.DataFrame(my_dict)
         fig = px.line(
             df, 
             x="Time", 
@@ -128,7 +126,6 @@ class Multidevice():
         humidity_dict = dict(zip(columns, humidity_rows))
 
         df = pd.DataFrame(humidity_dict)
-
         fig = px.line(
             df, x="Time", 
             y=columns,
