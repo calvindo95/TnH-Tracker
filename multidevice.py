@@ -64,7 +64,6 @@ class Multidevice():
                 y_temp.append(device.data[1])
                 y_humidity.append(device.data[2])
 
-
         pool = Pool(pool_size)
 
         pool.apply_async(self.create_temp_graph,(hours, time, y_temp,))
@@ -84,17 +83,24 @@ class Multidevice():
         return humidity_graph, temp_graph, combined_graph
 
     def create_temp_graph(self, hours, x_axis: list, y_axis: list):
-        y1_temp, y2_temp, y3_temp  = y_axis 
+        columns = ["Time"]
+        data = [x_axis]
+        
+        for device in self.devices:
+            columns.append(device.get_devname())
 
-        df = pd.DataFrame({
-            "Time": x_axis,
-            f"{self.devices[0].get_devname()}": y1_temp,
-            f"{self.devices[1].get_devname()}": y2_temp,
-            f"{self.devices[2].get_devname()}": y3_temp,
-            })
+        for tmp_data in y_axis:
+            data.append(tmp_data)
+
+        my_dict = dict(zip(columns, data))
+
+        df = pd.DataFrame(
+            my_dict
+            )
         fig = px.line(
-            df, x="Time", 
-            y=[f"{self.devices[0].get_devname()}", f"{self.devices[1].get_devname()}", f"{self.devices[2].get_devname()}"],
+            df, 
+            x="Time", 
+            y=columns,
             title=f'Temperature for the Last {hours} Hour(s)'
         )
         fig.update_layout(
@@ -111,17 +117,21 @@ class Multidevice():
         return fig
 
     def create_humidity_graph(self, hours, x_axis: list, y_axis: list):
-        y1_humidity, y2_humidity, y3_humidity  = y_axis 
+        columns = ["Time"]
+        humidity_rows = [x_axis]
 
-        df = pd.DataFrame({
-            "Time": x_axis,
-            f"{self.devices[0].get_devname()}": y1_humidity,
-            f"{self.devices[1].get_devname()}": y2_humidity,
-            f"{self.devices[2].get_devname()}": y3_humidity,
-            })
+        for device in self.devices:
+            columns.append(device.get_devname())
+        for tmp_data in y_axis:
+            humidity_rows.append(tmp_data)
+
+        humidity_dict = dict(zip(columns, humidity_rows))
+
+        df = pd.DataFrame(humidity_dict)
+
         fig = px.line(
             df, x="Time", 
-            y=[f"{self.devices[0].get_devname()}", f"{self.devices[1].get_devname()}", f"{self.devices[2].get_devname()}"],
+            y=columns,
             title=f'Humidity for the Last {hours} Hour(s)'
         )
         fig.update_layout(
@@ -139,27 +149,25 @@ class Multidevice():
         return fig
 
     def create_combined_graph(self, hours, x_time: list, y_temp: list, y_humidity: list):
-        y1_temp, y2_temp, y3_temp  = y_temp
-        y1_humidity, y2_humidity, y3_humidity  = y_humidity
+        columns = ["Time"]
+        combined_rows = [x_time]
 
-        df = pd.DataFrame({
-            "Time": x_time,
-            f"{self.devices[0].get_devname()} Temperature": y1_temp,
-            f"{self.devices[1].get_devname()} Temperature": y2_temp,
-            f"{self.devices[2].get_devname()} Temperature": y3_temp,
-            f"{self.devices[0].get_devname()} Humidity": y1_humidity,
-            f"{self.devices[1].get_devname()} Humidity": y2_humidity,
-            f"{self.devices[2].get_devname()} Humidity": y3_humidity,
-            })
+        for device in self.devices:
+            columns.append(f'{device.get_devname()} Temperature')
+        for device in self.devices:
+            columns.append(f'{device.get_devname()} Humidity')
+
+        for tmp_data in y_temp:
+            combined_rows.append(tmp_data)
+        for tmp_data in y_humidity:
+            combined_rows.append(tmp_data)
+        
+        combined_dict = dict(zip(columns, combined_rows))
+
+        df = pd.DataFrame(combined_dict)
         fig = px.line(
             df, x="Time", 
-            y=[f"{self.devices[0].get_devname()} Temperature", 
-                f"{self.devices[1].get_devname()} Temperature",
-                f"{self.devices[2].get_devname()} Temperature", 
-                f"{self.devices[0].get_devname()} Humidity",
-                f"{self.devices[1].get_devname()} Humidity",
-                f"{self.devices[2].get_devname()} Humidity"
-                ],
+            y=columns,
             title=f'Temperature and Humidity for the Last {hours} Hour(s)'
         )
         fig.update_layout(
