@@ -1,13 +1,14 @@
 import board
-import busio
 import adafruit_si7021
 import time
 import mariadb
 from datetime import datetime
 import config
+import requests
 
 sensor = adafruit_si7021.SI7021(board.I2C())
 DeviceID = config.deviceID
+URL = "http://192.168.1.174:8081/input_data"
 
 def connect_to_db():
     # Connect to MariaDB Platform
@@ -40,20 +41,10 @@ def get_sensor_data():
         return get_sensor_data()
 
 if __name__ == "__main__":
-    conn = connect_to_db()
-    cur = conn.cursor()
-
     humidity, temperature = get_sensor_data()
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    query1 = f"INSERT INTO History (Temperature, Humidity) VALUES ({temperature}, {humidity})"
-    query2 = f"INSERT INTO Data_History (DeviceID, HistoryID, CurrentDateTime) VALUES ({DeviceID}, LAST_INSERT_ID(), '{dt_string}')"
-
-    cur.execute(query1)
-    cur.execute(query2)
-    
-    print("Data inserted")
-
-    conn.commit()
-    conn.close()
+    s = requests.Session()
+    POST_DATA = f'{config.deviceID},pw_test,{dt_string},{temperature},{humidity}'
+    requests.post(config.httpserverip, data={"data": POST_DATA})
