@@ -1,32 +1,11 @@
 import board
 import adafruit_si7021
 import time
-import mariadb
 from datetime import datetime
 import config
 import requests
 
 sensor = adafruit_si7021.SI7021(board.I2C())
-DeviceID = config.deviceID
-URL = "http://192.168.1.174:8081/input_data"
-
-def connect_to_db():
-    # Connect to MariaDB Platform
-    try:
-        conn = mariadb.connect(
-            user=config.user,
-            password=config.password,
-            host=config.host,
-            port=config.port,
-            database=config.database
-        )
-        print("Connected")
-
-        return conn
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
-        time.sleep(5)
-        connect_to_db()
 
 def get_sensor_data():
     try:
