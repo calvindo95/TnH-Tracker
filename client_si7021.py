@@ -4,8 +4,10 @@ import time
 from datetime import datetime
 import config
 import requests
+import json
 
 sensor = adafruit_si7021.SI7021(board.I2C())
+headers = {'Content-Type': 'application/json'}
 
 def get_sensor_data():
     try:
@@ -25,5 +27,5 @@ if __name__ == "__main__":
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
 
     s = requests.Session()
-    POST_DATA = f'{config.deviceID},pw_test,{dt_string},{temperature},{humidity}'
-    requests.post(config.httpserverip, data={"data": POST_DATA})
+    POST_DATA = {'DeviceID':f'{config.deviceID}', 'hash':'pw_test', 'CurrentDateTime':f'{dt_string}', 'Temperature':f'{temperature}','Humidity':f'{humidity}'}
+    requests.post(config.httpserverip, data=json.dumps(POST_DATA), headers=headers)
