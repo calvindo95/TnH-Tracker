@@ -13,6 +13,18 @@ logger = logging.getLogger('gunicorn.error')
 def convert_dt(dt_obj):
     return dt_obj.strftime("%m/%d %I:%M:%S %p")
 
+def convert_dt_short(dt_obj):
+    return dt_obj.strftime("%m/%d %I:%M %p")
+
+def convert_dt_short_list(dt_obj_list):
+    tmp_list = []
+
+    for i in dt_obj_list:
+        tmp_list.append(i.strftime("%m/%d %I:%M %p"))
+
+    return tmp_list
+
+
 class Device():
     def __init__(self, deviceID):
         conn = self.connect_to_db()
@@ -24,6 +36,7 @@ class Device():
         self.dev_name = self.query_devname()
         self.last_record = [None, None, None, None]
         self.data = []  # time, temp, humidity
+        self.data_dict = {} # {'date':[temp,humidity]}
 
     def connect_to_db(self):
         # Connect to MariaDB Platform
@@ -75,7 +88,7 @@ class Device():
         if not self.last_record:
             self.query_last_record()
 
-        return convert_dt(self.last_record[1])
+        return self.last_record[1]
 
     def get_temperature(self):
         if not self.last_record:
@@ -99,15 +112,17 @@ class Device():
                     LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
                     WHERE Device.DeviceID=%s 
                     AND Data_History.CurrentDateTime >= DATE_ADD(NOW(), INTERVAL -%s HOUR)
-                    ORDER BY Data_History.CurrentDateTime DESC;'''
+                    ORDER BY Data_History.CurrentDateTime ASC;'''
             data = (self.deviceID, hours)
             self.local_cur.execute(query, data)
 
             x_time, y_temp, y_humidity = [], [], []
             for row in self.local_cur.fetchall():
-                x_time.append(row[0])
+                x_time.append(convert_dt_short(row[0]))
                 y_temp.append(row[1])
                 y_humidity.append(row[2])
+
+                self.data_dict[f'{convert_dt_short(row[0])}'] = [row[1], row[2]]
 
             logger.debug(f'Successful query of last {hours} hours of records from Device {self.dev_name}')
 

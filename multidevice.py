@@ -44,19 +44,32 @@ class Multidevice():
         time = []
 
         if len(tth_set) != 1:
-            logger.debug(f'Data length is not equal, truncating data: dev1:{len(self.devices[0].data[0])}, dev2:{len(self.devices[1].data[0])}, dev3:{len(self.devices[2].data[0])}')
-            
-            # find device with limiting len
-            tmp_min_len = min(tth_set)
+            logger.debug(f'Data length is not equal, truncating data: dev1:{len(self.devices[0].data_dict)}, dev2:{len(self.devices[1].data_dict)}, dev3:{len(self.devices[2].data_dict)}')
 
-            # truncate data to tmp_min_len
-            time = self.devices[0].data[0][0:tmp_min_len]
-
+            # Find device with max entries
             for device in self.devices:
-                y_temp.append(device.data[1][0:tmp_min_len])
-                y_humidity.append(device.data[2][0:tmp_min_len])
+                if len(device.data[0]) > len(time):
+                    time = device.data[0]
 
-            logger.debug(f'Data length is not equal, data len after truncating: dev1:{len(y_temp[0])}, dev2:{len(y_temp[1])}, dev3:{len(y_temp[2])}')
+            # check device maps for missing values, insert none if missing
+            for device in self.devices:
+                tmp_temp = []
+                tmp_humidity = []
+
+                for dt in time:
+                    if dt not in device.data_dict.keys():
+                        device.data_dict[f"{dt}"] = [None, None]
+                        #logger.debug(f'inserting {dt} into {device.data_dict[f"{dt}"]}')
+
+                for dt in time:
+                    temp_and_humidity = device.data_dict.get(dt)
+                    tmp_temp.append(temp_and_humidity[0])
+                    tmp_humidity.append(temp_and_humidity[1])
+
+                y_temp.append(tmp_temp)
+                y_humidity.append(tmp_humidity)
+
+            logger.debug(f'Data length after inserting None values:{len(self.devices[0].data_dict)}, dev2:{len(self.devices[1].data_dict)}, dev3:{len(self.devices[2].data_dict)}')
         else:
             time = self.devices[0].data[0]
 
