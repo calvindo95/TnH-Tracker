@@ -34,5 +34,6 @@ CREATE TABLE IF NOT EXISTS Data_History(
     CONSTRAINT DeviceID_fk FOREIGN KEY (DeviceID) REFERENCES Device(DeviceID)
 );
 
+-- CREATE USER 'user1'@localhost IDENTIFIED BY 'password1';
 -- GRANT ALL PRIVILEGES ON *.* TO <user>@<ip> IDENTIFIED BY '<pw>';
 -- update 50-server.cnf 127.0.0.1 -> 0.0.0.0

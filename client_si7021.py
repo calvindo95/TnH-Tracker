@@ -48,7 +48,7 @@ def send_response():
             send_response()
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='/home/pi/TnH-Tracker/client.log', format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8', level=logging.INFO)
+    logging.basicConfig(filename='/home/pi/projects/TnH-Tracker/client.log', format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8', level=logging.INFO)
     send_response.count = 0
     
     now = datetime.now()
