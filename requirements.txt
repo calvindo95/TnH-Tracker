@@ -1,6 +1,7 @@
-mariadb==1.1.2
 dash
 adafruit-circuitpython-sht31d
 adafruit-circuitpython-si7021
 plotly
+pandas
 gunicorn
+mariadb
