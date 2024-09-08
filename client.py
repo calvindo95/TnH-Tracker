@@ -13,7 +13,7 @@ import os
 i2c = busio.I2C(board.SCL, board.SDA)
 sensor = adafruit_sht31d.SHT31D(i2c)
 headers = {'Content-Type': 'application/json'}
-queue_dir = "/home/pi/projects/TnH-Tracker/queue/"
+queue_dir = "/home/pi/TnH-Tracker/queue/"
 
 def get_sensor_data():
     try:
@@ -60,7 +60,7 @@ def send_response():
             json.dump(POST_DATA, outputjson)
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='/home/pi/projects/TnH-Tracker/client.log', format='%(asctime)s %(levelname)s %(process)d %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
+    logging.basicConfig(filename='/home/pi/TnH-Tracker/client.log', format='%(asctime)s %(levelname)s %(process)d %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
     
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
