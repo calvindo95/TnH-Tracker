@@ -51,6 +51,8 @@ def send_response():
                     os.remove(queue_dir+json_file)
             return 0
         
+    except FileNotFoundError as e:
+        os.mkdir(queue_dir)
     except Exception as e:
         filename = str(uuid.uuid4())
         logging.error(f'Error posting request: {e}, saving to {queue_dir}{filename}.json')
