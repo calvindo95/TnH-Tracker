@@ -6,9 +6,12 @@ import config
 import requests
 import json
 import logging
+import uuid
+import os
 
 sensor = adafruit_si7021.SI7021(board.I2C())
 headers = {'Content-Type': 'application/json'}
+queue_dir = "/home/pi/projects/TnH-Tracker/queue/"
 
 def get_sensor_data():
     try:
@@ -23,33 +26,40 @@ def get_sensor_data():
         return get_sensor_data()
 
 def send_response():
-    send_response.count += 1
     response = ''
     
     try:
         response = requests.post(config.httpserverip, data=json.dumps(POST_DATA), headers=headers)
+        
         if response.text != "Received data value: 0":
             logging.warning(f'failed - |{response.text}|')
             return 1
         else:
             logging.info(f'Successfully posted data')
+
+            for json_file in os.listdir(queue_dir):
+                logging.info(f'Attempting to post queue data')
+                with open(queue_dir+json_file, "r") as open_json:
+                    json_obj = json.load(open_json)
+
+                response = requests.post(config.httpserverip, data=json.dumps(json_obj), headers=headers)
+                if response.text != "Received data value: 0":
+                    logging.warning(f'failed - |{response.text}|')
+                    return 1
+                else:
+                    logging.info(f'Successfully posted queue data')
+                    os.remove(queue_dir+json_file)
             return 0
         
     except Exception as e:
-        logging.error(f'Error posting request: {e}')
+        filename = str(uuid.uuid4())
+        logging.error(f'Error posting request: {e}, saving to {queue_dir}{filename}.json')
 
-        if send_response.count > 60:
-            logging.critical(f"Failed to post request {send_response.count} times. Stopping")
-            return 1
-        else:
-            logging.error(f"Retrying sending post request count: {send_response.count} in 60 seconds")
-
-            time.sleep(60)
-            send_response()
+        with open(f"{queue_dir}{filename}.json", "w") as outputjson:
+            json.dump(POST_DATA, outputjson)
 
 if __name__ == "__main__":
     logging.basicConfig(filename='/home/pi/projects/TnH-Tracker/client.log', format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8', level=logging.INFO)
-    send_response.count = 0
     
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
