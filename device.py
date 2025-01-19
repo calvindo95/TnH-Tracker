@@ -128,10 +128,11 @@ class Device():
 
             # update latest data
             #self.last_record.clear()
-            self.last_record[0] = (self.dev_name)
-            self.last_record[1] = (x_time[-1])
-            self.last_record[2] = (y_temp[-1])
-            self.last_record[3] = (y_humidity[-1])
+            if x_time or y_temp or y_humidity:
+                self.last_record[0] = (self.dev_name)
+                self.last_record[1] = (x_time[-1])
+                self.last_record[2] = (y_temp[-1])
+                self.last_record[3] = (y_humidity[-1])
 
             self.data = x_time, y_temp, y_humidity
             return x_time, y_temp, y_humidity

@@ -1,6 +1,7 @@
 from datetime import datetime
 import plotly.express as px
 import pandas as pd
+import numpy as np
 import logging
 from multiprocessing.pool import ThreadPool as Pool
 
@@ -44,7 +45,8 @@ class Multidevice():
         time = []
 
         if len(tth_set) != 1:
-            logger.debug(f'Data length is not equal, truncating data: dev1:{len(self.devices[0].data_dict)}, dev2:{len(self.devices[1].data_dict)}, dev3:{len(self.devices[2].data_dict)}')
+            for device in self.devices:
+                logger.debug(f'Data length is not equal, data len: dev{device.deviceID}:{len(device.data_dict)}')
 
             # Find device with max entries
             for device in self.devices:
@@ -69,7 +71,8 @@ class Multidevice():
                 y_temp.append(tmp_temp)
                 y_humidity.append(tmp_humidity)
 
-            logger.debug(f'Data length after inserting None values:{len(self.devices[0].data_dict)}, dev2:{len(self.devices[1].data_dict)}, dev3:{len(self.devices[2].data_dict)}')
+            for device in self.devices:
+                logger.debug(f'Data length is not equal, new data len: dev{device.deviceID}:{len(device.data_dict)}')
         else:
             time = self.devices[0].data[0]
 
@@ -108,6 +111,9 @@ class Multidevice():
         my_dict = dict(zip(columns, data))
 
         df = pd.DataFrame(my_dict)
+        # replace None values as NaN
+        df = df.fillna(value=np.nan)
+
         fig = px.line(
             df, 
             x="Time", 
@@ -139,6 +145,9 @@ class Multidevice():
         humidity_dict = dict(zip(columns, humidity_rows))
 
         df = pd.DataFrame(humidity_dict)
+        # replace None values as NaN
+        df = df.fillna(value=np.nan)
+
         fig = px.line(
             df, x="Time", 
             y=columns,
@@ -175,6 +184,9 @@ class Multidevice():
         combined_dict = dict(zip(columns, combined_rows))
 
         df = pd.DataFrame(combined_dict)
+        # replace None values as NaN
+        df = df.fillna(value=np.nan)
+
         fig = px.line(
             df, x="Time", 
             y=columns,
