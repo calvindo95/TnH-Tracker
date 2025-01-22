@@ -66,14 +66,12 @@ class Device():
     def query_last_record(self):
         self.check_db_connection()
         try:
-            query = '''SELECT DevName.DevName, Data_History.CurrentDateTime, History.Temperature, History.Humidity 
+            query = '''SELECT Device.DevName, History.CurrentDateTime, History.Temperature, History.Humidity 
                     FROM Device 
-                    LEFT JOIN DevName ON Device.DevNameID=DevName.DevNameID 
-                    LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
-                    LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
+                    LEFT JOIN History ON History.DeviceID=Device.DeviceID 
                     WHERE Device.DeviceID=%s
-                    AND Data_History.CurrentDateTime >= DATE_ADD(NOW(), INTERVAL -1 HOUR)
-                    ORDER BY Data_History.CurrentDateTime DESC LIMIT 1'''
+                    AND History.CurrentDateTime >= DATE_ADD(NOW(), INTERVAL -1 HOUR)
+                    ORDER BY History.CurrentDateTime DESC LIMIT 1'''
             data = (self.deviceID,)
             self.local_cur.execute(query, data)
 
@@ -106,13 +104,12 @@ class Device():
     def query_data(self, hours):
         self.check_db_connection()
         try:
-            query = '''SELECT Data_History.CurrentDateTime, History.Temperature, History.Humidity
+            query = '''SELECT History.CurrentDateTime, History.Temperature, History.Humidity
                     FROM Device  
-                    LEFT JOIN Data_History ON Data_History.DeviceID=Device.DeviceID 
-                    LEFT JOIN History ON History.HistoryID=Data_History.HistoryID 
+                    LEFT JOIN History ON History.DeviceID=Device.DeviceID 
                     WHERE Device.DeviceID=%s 
-                    AND Data_History.CurrentDateTime >= DATE_ADD(NOW(), INTERVAL -%s HOUR)
-                    ORDER BY Data_History.CurrentDateTime ASC;'''
+                    AND History.CurrentDateTime >= DATE_ADD(NOW(), INTERVAL -%s HOUR)
+                    ORDER BY History.CurrentDateTime ASC;'''
             data = (self.deviceID, hours)
             self.local_cur.execute(query, data)
 
@@ -220,8 +217,7 @@ class Device():
     def query_devname(self):
         self.check_db_connection()
         try:
-            query = '''SELECT DevName.DevName FROM DevName 
-                        LEFT JOIN Device ON Device.DevNameID=DevName.DevNameID 
+            query = '''SELECT Device.DevName FROM Device 
                         WHERE DeviceID=%s'''
             data = (self.deviceID,)
             self.local_cur.execute(query, data)

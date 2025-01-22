@@ -24,12 +24,12 @@ app.logger.error('Application started')
 dev1 = Device(1)
 dev2 = Device(2)
 dev3 = Device(3)
-dev4 = Device(4)
+#dev4 = Device(4)
 
 def show_all_tab(hours):
     start = datetime.now()
 
-    devices = [dev1, dev2, dev3, dev4]
+    devices = [dev1, dev2, dev3]
     all = Multidevice(devices)
 
     fig_humidity, fig_temp, fig_combined = all.get_graphs(hours)
